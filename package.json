@@ -25,6 +25,7 @@
   "homepage": "https://github.com/pokt-network/web3-pocket-provider#readme",
   "dependencies": {
     "web3-core-helpers": "^1.0.0-beta.36",
+    "web3-utils": "^1.0.0-beta.36",
     "xhr2": "^0.1.4"
   }
 }
