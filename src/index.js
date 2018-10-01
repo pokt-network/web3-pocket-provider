@@ -26,6 +26,8 @@ var PocketProvider = function PocketProvider(host, transactionSigner, options) {
     this.headers = options.headers;
     this.connected = false;
     this.networkId = options.networkId || '4';
+    // Make sure networkId is a string
+    this.networkId = this.networkId.toString();
 };
 
 /**
@@ -44,11 +46,13 @@ PocketProvider.prototype.setTransactionSigner = function(transactionSigner) {
 /**
  * Method to create a new XHR2 instance
  * @method _generateHttpRequest
+ * @param {String} url
  * @returns {XHR2}
  */
-PocketProvider.prototype._generateHttpRequest = function() {
+PocketProvider.prototype._generateHttpRequest = function(url) {
     var request = new XHR2();
 
+    request.open('POST', url, true);
     request.setRequestHeader('Content-Type', 'application/json');
     request.timeout = this.timeout && this.timeout !== 1 ? this.timeout : 0;
 
@@ -68,7 +72,7 @@ PocketProvider.prototype._generateHttpRequest = function() {
  * @returns {String} QUERY|TRANSACTION
  */
 PocketProvider.prototype._getRequestType = function(payload) {
-    return (TRANSACTION_METHODS.includes(method)) ? TRANSACTION : QUERY;
+    return (TRANSACTION_METHODS.includes(payload.method)) ? TRANSACTION : QUERY;
 }
 
 /**
@@ -93,20 +97,21 @@ PocketProvider.prototype._getTransactionURL = function () {
  * Method to generate the query body according to the given JSON-RPC payload
  * @method _generateQueryBody
  * @param {Object} payload
+ * @param {XHR2} httpRequest
  * @param {Function} callback
  * @returns {Object}
  */
-PocketProvider.prototype._generateQueryBody = function(payload, callback) {
+PocketProvider.prototype._generateQueryBody = function(payload, httpRequest, callback) {
     var queryBody = {
         "network": ETH_NETWORK,
         "subnetwork": this.networkId,
         "query": {
-            rpc_method = payload.method,
-            rpc_params = payload.params
+            rpc_method: payload.method,
+            rpc_params: payload.params
         },
         "decoder": {}
     }
-    callback(null, queryBody);
+    callback(null, httpRequest, queryBody);
 }
 
 /**
@@ -116,7 +121,7 @@ PocketProvider.prototype._generateQueryBody = function(payload, callback) {
  * @param {Function} callback
  */
 PocketProvider.prototype._getNonce = function(sender, callback) {
-    this.sendAsync({
+    this.send({
         jsonrpc: '2.0',
         method: 'eth_getTransactionCount',
         params: [sender, "latest"],
@@ -125,7 +130,7 @@ PocketProvider.prototype._getNonce = function(sender, callback) {
         if (err != null) {
             callback(err);
         } else {
-            var nonce = web3Utils.toDecimal(response.result);
+            var nonce = web3Utils.toDecimal(response);
             callback(null, nonce);
         }
     });
@@ -134,9 +139,10 @@ PocketProvider.prototype._getNonce = function(sender, callback) {
 /**
  * @method _parseTransactionParams
  * @param {Object} payload 
+ * @param {XHR2} httpRequest
  * @param {Function} callback 
  */
-PocketProvider.prototype._parseTransactionParams = function(payload, callback) {
+PocketProvider.prototype._parseTransactionParams = function(payload, httpRequest, callback) {
     var txParams = payload.params[0];
     var sender = txParams.from;
     var _this = this;
@@ -163,11 +169,11 @@ PocketProvider.prototype._parseTransactionParams = function(payload, callback) {
 
                 var transactionBody = {
                     "network": ETH_NETWORK,
-                    "subnetwork": _this.subnetwork,
+                    "subnetwork": _this.networkId,
                     "serialized_tx": rawTx,
                     "tx_metadata": {}
                 }
-                callback(null, transactionBody);
+                callback(null, httpRequest, transactionBody);
             });
         });
     });
@@ -177,13 +183,14 @@ PocketProvider.prototype._parseTransactionParams = function(payload, callback) {
  * Method to generate the query body according to the given JSON-RPC payload
  * @method _generateTransactionBody
  * @param {Object} payload
+ * @param {XHR2} httpRequest
  * @param {Function} callback
  */
-PocketProvider.prototype._generateTransactionBody = function(payload, callback) {
+PocketProvider.prototype._generateTransactionBody = function(payload, httpRequest, callback) {
     var method = payload.method;
 
     if(method === 'eth_sendTransaction') {
-        this._parseTransactionParams(payload, callback);
+        this._parseTransactionParams(payload, httpRequest, callback);
     } else if(method === 'eth_sendRawTransaction') {
         var transactionBody = {
             "network": ETH_NETWORK,
@@ -191,7 +198,7 @@ PocketProvider.prototype._generateTransactionBody = function(payload, callback) 
             "serialized_tx": payload.params[0],
             "tx_metadata": {}
         }
-        callback(null, transactionBody);
+        callback(null, httpRequest, transactionBody);
     } else {
         callback(pocketProviderErrors.InvalidRequestBody(payload));
     }
@@ -239,13 +246,14 @@ PocketProvider.prototype._onTransactionResponse = function(httpRequest, callback
         if (httpRequest.readyState === 4 && httpRequest.timeout !== 1) {
             var rawTxResponse = httpRequest.responseText,
                 error = null,
-                result = null;
+                txHash = null;
 
             try {
                 const txResponse = JSON.parse(rawTxResponse);
                 txHash = txResponse.hash;
                 if (txHash === undefined) {
                     error = web3Errors.InvalidResponse(rawTxResponse);
+                    _this.connected = false;
                 } else {
                     _this.connected = true;
                 }
@@ -277,25 +285,24 @@ PocketProvider.prototype._onTimeOut = function (httpRequest, callback) {
 /**
  * Method for the configuration of the http request sent to the Pocket Node
  * @method _configureRequest
- * @param {XHR2} httpRequest
  * @param {Object} payload
  * @param {Function} requestCallback
  * @param {Function} finished
  * @returns {Object} http request body to be sent
  */
-PocketProvider.prototype._configureRequest = function(httpRequest, payload, requestCallback, finished) {
+PocketProvider.prototype._generateRequestBody = function(payload, requestCallback, finished) {
     var requestType = this._getRequestType(payload);
-    // Set the timeout requestCallback
-    this._onTimeOut(httpRequest, requestCallback);
 
     if (requestType === QUERY) {
-        httpRequest.open('POST', this._getQueryURL(), true);
+        var httpRequest = this._generateHttpRequest(this._getQueryURL());
+        this._onTimeOut(httpRequest, requestCallback);
         this._onQueryResponse(httpRequest, requestCallback);
-        this._generateQueryBody(payload, finished);
+        this._generateQueryBody(payload, httpRequest, finished);
     } else if (requestType === TRANSACTION) {
-        httpRequest.open('POST', this._getTransactionURL(), true);
+        var httpRequest = this._generateHttpRequest(this._getTransactionURL());
+        this._onTimeOut(httpRequest, requestCallback);
         this._onTransactionResponse(httpRequest, requestCallback);
-        this._generateTransactionBody(payload, finished);
+        this._generateTransactionBody(payload, httpRequest, finished);
     }
 }
 
@@ -306,9 +313,7 @@ PocketProvider.prototype._configureRequest = function(httpRequest, payload, requ
  * @param {Function} callback triggered on end with (err, result)
  */
 PocketProvider.prototype.send = function(payload, callback) {
-    var httpRequest = this._generateHttpRequest();
-    
-    this._configureRequest(httpRequest, payload, callback, function(err, requestBody) {
+    this._generateRequestBody(payload, callback, function (err, httpRequest, requestBody) {
         if(err != null) {
             callback(err);
         }
