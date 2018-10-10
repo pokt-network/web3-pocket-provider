@@ -7984,9 +7984,10 @@ PocketProvider.prototype._generateTransactionBody = function(payload, httpReques
  * Sets the onreadystatechange callback for a query http request
  * @method _onQueryResponse
  * @param {XHR2} httpRequest
+ * @param {Object} payload
  * @param {Function} callback
  */
-PocketProvider.prototype._onQueryResponse = function(httpRequest, callback) {
+PocketProvider.prototype._onQueryResponse = function(httpRequest, payload, callback) {
     var _this = this;
     httpRequest.onreadystatechange = function() {
         if (httpRequest.readyState === 4 && httpRequest.timeout !== 1) {
@@ -8006,7 +8007,7 @@ PocketProvider.prototype._onQueryResponse = function(httpRequest, callback) {
 
             _this.connected = true;
             var response = {
-                "id": 1,
+                "id": payload.id,
                 "jsonrpc": "2.0",
                 "result": result
             }
@@ -8019,9 +8020,10 @@ PocketProvider.prototype._onQueryResponse = function(httpRequest, callback) {
  * Sets the onreadystatechange callback for a transaction http request
  * @method _onTransactionResponse
  * @param {XHR2} httpRequest
+ * @param {Object} payload
  * @param {Function} callback
  */
-PocketProvider.prototype._onTransactionResponse = function(httpRequest, callback) {
+PocketProvider.prototype._onTransactionResponse = function(httpRequest, payload, callback) {
     var _this = this;
     httpRequest.onreadystatechange = function () {
         if (httpRequest.readyState === 4 && httpRequest.timeout !== 1) {
@@ -8044,7 +8046,7 @@ PocketProvider.prototype._onTransactionResponse = function(httpRequest, callback
             }
 
             var response = {
-                "id": 1,
+                "id": payload.id,
                 "jsonrpc": "2.0",
                 "result": txHash
             }
@@ -8082,12 +8084,12 @@ PocketProvider.prototype._generateRequestBody = function(payload, requestCallbac
     if (requestType === QUERY) {
         var httpRequest = this._generateHttpRequest(this._getQueryURL());
         this._onTimeOut(httpRequest, requestCallback);
-        this._onQueryResponse(httpRequest, requestCallback);
+        this._onQueryResponse(httpRequest, payload, requestCallback);
         this._generateQueryBody(payload, httpRequest, finished);
     } else if (requestType === TRANSACTION) {
         var httpRequest = this._generateHttpRequest(this._getTransactionURL());
         this._onTimeOut(httpRequest, requestCallback);
-        this._onTransactionResponse(httpRequest, requestCallback);
+        this._onTransactionResponse(httpRequest, payload, requestCallback);
         this._generateTransactionBody(payload, httpRequest, finished);
     }
 }
