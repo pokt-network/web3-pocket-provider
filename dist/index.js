@@ -7906,7 +7906,7 @@ PocketProvider.prototype._getNonce = function(sender, callback) {
         if (err != null) {
             callback(err);
         } else {
-            var nonce = web3Utils.toDecimal(response);
+            var nonce = web3Utils.toDecimal(response.result);
             callback(null, nonce);
         }
     });
