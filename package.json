@@ -15,7 +15,10 @@
     "ethereum",
     "pocket",
     "pocket-node",
-    "infrastructure"
+    "infrastructure",
+    "web3",
+    "web3js",
+    "javascript"
   ],
   "author": "Luis C. de Leon <luis@pokt.network>",
   "license": "MIT",
