@@ -38,7 +38,6 @@ describe('PocketProvider', function () {
                 if(err != null) {
                     throw err;
                 }
-                console.log(result);
                 TestTransactionSigner.accounts = result;
                 done();
             });
