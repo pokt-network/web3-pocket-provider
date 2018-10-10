@@ -229,7 +229,12 @@ PocketProvider.prototype._onQueryResponse = function(httpRequest, callback) {
             }
 
             _this.connected = true;
-            callback(error, result);
+            var response = {
+                "id": 1,
+                "jsonrpc": "2.0",
+                "result": result
+            }
+            callback(error, response);
         }
     }
 }
@@ -262,7 +267,12 @@ PocketProvider.prototype._onTransactionResponse = function(httpRequest, callback
                 _this.connected = false;
             }
 
-            callback(error, txHash);
+            var response = {
+                "id": 1,
+                "jsonrpc": "2.0",
+                "result": txHash
+            }
+            callback(error, response);
         }
     }
 }
