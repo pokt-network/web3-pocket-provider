@@ -1,6 +1,6 @@
 {
   "name": "web3-pocket-provider",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "A web3 module to handle connections to a Ethereum Pocket Node",
   "main": "src/index.js",
   "scripts": {
