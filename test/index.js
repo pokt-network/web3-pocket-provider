@@ -4,6 +4,7 @@ var EthereumTx = require('ethereumjs-tx');
 
 var TestTransactionSigner = {
     hasAddress: function(address, callback) {
+        console.log(TestTransactionSigner.accounts);
         callback(null, TestTransactionSigner.accounts.includes(address));
     },
     signTransaction: function(txParams, callback) {
@@ -21,26 +22,35 @@ var TestTransactionSigner = {
 }
 
 var TestOptions = {
-    networkId: '5777'
+    networkId: '4'
 }
 
-var TestHost = 'http://localhost:3000';
+var TestHost = 'https://ethereum.pokt.network';
 
 describe('PocketProvider', function () {
     
     describe('#send', function() {
         var provider = new PocketProvider(TestHost, TestTransactionSigner, TestOptions);
 
-        // Fetch accounts from the node
+        // Fetch accounts from the node if the accounts array is empty
         before(function(done) {
-            var query = {"jsonrpc": "2.0", "method": "eth_accounts", "params": [], "id": 1};
-            provider.send(query, function (err, result) {
-                if(err != null) {
-                    throw err;
-                }
-                TestTransactionSigner.accounts = result;
+            if (TestTransactionSigner.accounts.length === 0) {
+                var query = {
+                    "jsonrpc": "2.0",
+                    "method": "eth_accounts",
+                    "params": [],
+                    "id": 1
+                };
+                provider.send(query, function (err, result) {
+                    if (err != null) {
+                        throw err;
+                    }
+                    TestTransactionSigner.accounts = result;
+                    done();
+                });
+            } else {
                 done();
-            });
+            }
         });
 
         it('should submit queries', function (done) {
@@ -59,9 +69,9 @@ describe('PocketProvider', function () {
             var tx = {
                 "from": TestTransactionSigner.accounts[0],
                 "to": TestTransactionSigner.accounts[1],
-                "value": "0xDE0B6B3A7640000",
-                "gas": "0x3B9AC9FF",
-                "gasPrice": "0x1"
+                "value": "0x186A0",
+                "gas": "0x5208",
+                "gasPrice": "0x3B9ACA00"
             }
             var txRequest = {"jsonrpc":"2.0","method":"eth_sendTransaction","params":[tx],"id":1};
             provider.send(txRequest, function(err, result) {
@@ -70,6 +80,37 @@ describe('PocketProvider', function () {
                 }
                 assert.ok(result);
                 done();
+            });
+        });
+
+        it('should submit transactions using eth_sendRawTransaction', function (done) {
+            // Transfers 1 eth from accounts[0] to accounts[1]
+            var tx = {
+                "from": TestTransactionSigner.accounts[0],
+                "to": TestTransactionSigner.accounts[1],
+                "value": "0x186A0",
+                "gas": "0x5208",
+                "gasPrice": "0x3B9ACA00"
+            }
+            TestTransactionSigner.signTransaction(tx, function(error, rawTx){
+                // Asserts signing worked
+                assert.equal(error, null);
+
+                // Sends the transaction
+                var txRequest = {
+                    "jsonrpc": "2.0",
+                    "method": "eth_sendRawTransaction",
+                    "params": [rawTx],
+                    "id": 1
+                };
+                provider.send(txRequest, function (err, result) {
+                    if (err !== null) {
+                        throw err;
+                    }
+                    // Assert transaction result
+                    assert.ok(result);
+                    done();
+                });
             });
         });
     });

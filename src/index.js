@@ -194,7 +194,7 @@ PocketProvider.prototype._generateTransactionBody = function(payload, httpReques
     } else if(method === 'eth_sendRawTransaction') {
         var transactionBody = {
             "network": ETH_NETWORK,
-            "subnetwork": _this.subnetwork,
+            "subnetwork": this.subnetwork,
             "serialized_tx": payload.params[0],
             "tx_metadata": {}
         }
