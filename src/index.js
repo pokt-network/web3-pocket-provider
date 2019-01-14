@@ -138,9 +138,9 @@ PocketProvider.prototype._getNonce = function(sender, callback) {
 
 /**
  * @method _parseTransactionParams
- * @param {Object} payload 
+ * @param {Object} payload
  * @param {XHR2} httpRequest
- * @param {Function} callback 
+ * @param {Function} callback
  */
 PocketProvider.prototype._parseTransactionParams = function(payload, httpRequest, callback) {
     var txParams = payload.params[0];
@@ -194,7 +194,7 @@ PocketProvider.prototype._generateTransactionBody = function(payload, httpReques
     } else if(method === 'eth_sendRawTransaction') {
         var transactionBody = {
             "network": ETH_NETWORK,
-            "subnetwork": this.subnetwork,
+            "subnetwork": this.networkId,
             "serialized_tx": payload.params[0],
             "tx_metadata": {}
         }
@@ -329,7 +329,7 @@ PocketProvider.prototype.send = function(payload, callback) {
         if(err != null) {
             callback(err);
         }
-        
+
         if (requestBody !== null && requestBody !== undefined) {
             try {
                 httpRequest.send(JSON.stringify(requestBody));
