@@ -3432,7 +3432,7 @@
 // modifications and pruning. It is licensed under MIT:
 //
 // Copyright 2015-2016 Chen, Yi-Cyuan
-//  
+//
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
 // "Software"), to deal in the Software without restriction, including
@@ -3440,10 +3440,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -4000,7 +4000,7 @@ var randomHex = function(size, callback) {
     var crypto = require('./crypto.js');
     var isCallback = (typeof callback === 'function');
 
-    
+
     if (size > 65536) {
         if(isCallback) {
             callback(new Error('Requested too many random bytes.'));
@@ -7914,9 +7914,9 @@ PocketProvider.prototype._getNonce = function(sender, callback) {
 
 /**
  * @method _parseTransactionParams
- * @param {Object} payload 
+ * @param {Object} payload
  * @param {XHR2} httpRequest
- * @param {Function} callback 
+ * @param {Function} callback
  */
 PocketProvider.prototype._parseTransactionParams = function(payload, httpRequest, callback) {
     var txParams = payload.params[0];
@@ -7970,7 +7970,7 @@ PocketProvider.prototype._generateTransactionBody = function(payload, httpReques
     } else if(method === 'eth_sendRawTransaction') {
         var transactionBody = {
             "network": ETH_NETWORK,
-            "subnetwork": _this.subnetwork,
+            "subnetwork": _this.networkId,
             "serialized_tx": payload.params[0],
             "tx_metadata": {}
         }
@@ -8105,7 +8105,7 @@ PocketProvider.prototype.send = function(payload, callback) {
         if(err != null) {
             callback(err);
         }
-        
+
         if (requestBody !== null && requestBody !== undefined) {
             try {
                 httpRequest.send(JSON.stringify(requestBody));
