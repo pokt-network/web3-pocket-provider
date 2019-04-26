@@ -1,3 +1,6 @@
+# NOTE:
+This repository has been deprecated, please visit the [PocketJS repository for the latest on Pocket Javascript client development.](https://github.com/pokt-network/pocket-js)
+
 # Web3.js Pocket Provider
 A Web3.js Provider to connect to any Ethereum Pocket Node endpoint. To find out more about Pocket Node please visit the [repo](https://github.com/pokt-network/pocket-node).
 
